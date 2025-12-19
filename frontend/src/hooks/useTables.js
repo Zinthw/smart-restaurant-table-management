@@ -1,14 +1,14 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from "react";
 import {
   getTables,
   createTable,
   updateTable,
   updateTableStatus,
   generateQR,
-} from '../api/tables.api';
+} from "../api/tables.api";
 
 export default function useTables() {
-  const [tables, setTables] = useState([]); 
+  const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -17,14 +17,13 @@ export default function useTables() {
     setError(null);
     try {
       const res = await getTables();
-      // Thêm dấu ? và || [] để bảo vệ
-      // Nếu res.data.data không có, nó sẽ fallback về mảng rỗng []
-      setTables(res.data?.data || []); 
+      // Backend trả về array trực tiếp trong res.data
+      setTables(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error(err);
-      setError('Failed to load tables');
+      setError("Failed to load tables");
       // Nếu lỗi, đảm bảo tables vẫn là mảng rỗng
-      setTables([]); 
+      setTables([]);
     } finally {
       setLoading(false);
     }
@@ -65,7 +64,7 @@ export default function useTables() {
     try {
       await updateTableStatus(
         table.id,
-        table.status === 'active' ? 'inactive' : 'active'
+        table.status === "active" ? "inactive" : "active"
       );
       await fetchTables();
     } catch (err) {
