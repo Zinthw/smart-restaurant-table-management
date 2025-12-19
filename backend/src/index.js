@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const tablesRouter = require('./routes/tables');
 const qrRouter = require('./routes/qr');
+const publicRouter = require('./routes/public');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -15,8 +16,12 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Admin Routes
 app.use('/api/admin/tables', tablesRouter);
 app.use('/api/admin/tables', qrRouter);
+
+// Public Routes (Dành cho khách quét QR). Frontend sẽ gọi /api/menu/verify
+app.use('/api/menu', publicRouter);
 
 app.use(errorHandler);
 
