@@ -167,6 +167,7 @@ router.get('/:id/qr/download', async (req, res, next) => {
   }
 });
 
+// Regenerate QR codes for all active tables
 router.post('/qr/regenerate-all', async (req, res, next) => {
   try {
     // Lấy tất cả các bàn đang hoạt động
