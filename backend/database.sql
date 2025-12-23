@@ -26,6 +26,12 @@ CREATE TABLE IF NOT EXISTS users (
         status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
+-- Thêm user admin mặc định (password: admin123)
+-- Hash được tạo bằng bcrypt với salt rounds = 10
+INSERT INTO users (email, password_hash, role, status) 
+VALUES ('admin@restaurant.com', '$2b$10$rHj4EqBqHPZ.VqWRyNxn0Op7iGmYqGfLvLbDPHxqRt5Rd3hTbQm0K', 'admin', 'active')
+ON CONFLICT (email) DO NOTHING;
       
 -- 4. Thêm indexes để tối ưu tìm kiếm
 CREATE INDEX idx_tables_status ON tables(status);

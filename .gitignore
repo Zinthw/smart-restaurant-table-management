@@ -1,5 +1,29 @@
+# Dependencies
 node_modules/
+package-lock.json
+
+# Environment variables (QUAN TRỌNG - không commit)
 .env
+.env.local
+.env.production
+
+# Build outputs
 dist/
 build/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# IDE settings (tùy chọn)
+.vscode/
+.idea/
+
+# Test coverage
+coverage/
+.nyc_output/
