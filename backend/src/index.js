@@ -7,6 +7,9 @@ const qrRouter = require('./routes/qr');
 const publicRouter = require('./routes/public');
 const errorHandler = require('./middleware/errorHandler');
 
+const authRouter = require('./routes/auth');
+const { requireAuth, requireRole } = require('./middleware/authMiddleware');
+
 const app = express();
 
 app.use(cors());
@@ -16,9 +19,16 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Admin Routes
-app.use('/api/admin/tables', tablesRouter);
-app.use('/api/admin/tables', qrRouter);
+// API Auth (Login/Register) 
+app.use('/api/auth', authRouter);
+
+// API Admin (Tables, QR)
+// Yêu cầu: Phải đăng nhập VÀ Phải là 'admin'
+app.use('/api/admin/tables', requireAuth, requireRole('admin'), tablesRouter);
+app.use('/api/admin/tables', requireAuth, requireRole('admin'), qrRouter);
+
+// API cho Waiter (sau này làm thêm)
+// app.use('/api/waiter/orders', requireAuth, requireRole(['waiter', 'admin']), waiterRouter);
 
 // Public Routes (Dành cho khách quét QR). Frontend sẽ gọi /api/menu/verify
 app.use('/api/menu', publicRouter);
