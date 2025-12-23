@@ -18,14 +18,15 @@ CREATE TABLE tables (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email VARCHAR(120) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(20) DEFAULT 'admin' CHECK (role IN ('admin', 'super_admin', 'waiter')),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
+CREATE TABLE IF NOT EXISTS users (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR(120) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'staff', 'waiter', 'kitchen')),
+        status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      
 -- 4. Thêm indexes để tối ưu tìm kiếm
 CREATE INDEX idx_tables_status ON tables(status);
 CREATE INDEX idx_tables_location ON tables(location);
