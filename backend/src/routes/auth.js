@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
-// 1. Đăng ký nhân viên mới (Register)
+// Register new staff (Roles: staff, waiter, kitchen)
 router.post('/register', async (req, res, next) => {
   try {
     const { email, password, role } = req.body;
@@ -15,13 +15,22 @@ router.post('/register', async (req, res, next) => {
       return res.status(400).json({ message: 'Email, password, and role are required' });
     }
 
-    // Validate Role theo danh sách trong login_flow.docx
-    const validRoles = ['admin', 'staff', 'waiter', 'kitchen'];
-    if (!validRoles.includes(role)) {
-      return res.status(400).json({ message: 'Invalid role. Allowed: admin, staff, waiter, kitchen' });
+    // CHẶN ĐĂNG KÝ ADMIN
+    if (role === 'admin') {
+      return res.status(403).json({ 
+        message: 'Registration for admin role is restricted. Please use the pre-configured admin account.' 
+      });
     }
 
-    // Check Email tồn tại
+    // Validate Role 
+    const validRoles = ['staff', 'waiter', 'kitchen'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ 
+        message: 'Invalid role. Allowed roles: staff, waiter, kitchen' 
+      });
+    }
+
+    // Check Email exists
     const userCheck = await db.query('SELECT 1 FROM users WHERE email = $1', [email]);
     if (userCheck.rowCount > 0) {
       return res.status(400).json({ message: 'Email already exists' });
@@ -49,33 +58,32 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
-// 2. Đăng nhập (Login) - Theo Flow
+// Login (For all roles including Admin)
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Tìm user theo email
+    // Find user
     const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
 
-    // Check user tồn tại & password
+    // Check password
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // Check status (Nếu inactive thì không cho vào)
+    // Check status
     if (user.status !== 'active') {
       return res.status(403).json({ message: 'Account is inactive' });
     }
 
-    // Tạo Token
+    // Generate Token
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'secret', // Nhớ set trong .env
+      process.env.JWT_SECRET || 'secret',
       { expiresIn: '1d' }
     );
 
-    // Trả về Role để Frontend điều hướng (Admin -> Dashboard, Waiter -> Tables...)
     res.json({
       message: 'Login successful',
       token,

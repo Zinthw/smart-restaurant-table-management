@@ -16,9 +16,9 @@ async function migrate() {
     await pool.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto";`);
     
 
-    // Nó giúp xóa bảng cũ để tạo bảng mới.
-    // console.log('⚠️ Đang reset bảng users...');
-    // await pool.query(`DROP TABLE IF EXISTS users CASCADE;`);
+    // Xóa bảng cũ để tạo bảng mới.
+    console.log('⚠️ Đang reset bảng users...');
+    await pool.query(`DROP TABLE IF EXISTS users CASCADE;`);
 
     // 2. Tạo bảng TABLES (Giữ nguyên)
     await pool.query(`

@@ -40,6 +40,8 @@ npm install
 
 node migrate.js
 
+Tài khoản Admin khởi tạo sẵn: email `admin@restaurant.com` / pass `123456` (Không thể tạo mới tài khoản Admin khác)
+
 ### 2. Cài đặt thư viện
 
 npm run dev
