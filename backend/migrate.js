@@ -81,6 +81,8 @@ async function migrate() {
         price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
         status VARCHAR(20) DEFAULT 'available' CHECK (status IN ('available', 'sold_out', 'hidden')),
         is_chef_recommended BOOLEAN DEFAULT false,
+        prep_time_minutes INT DEFAULT 15 CHECK (prep_time_minutes >= 0 AND prep_time_minutes <= 240),
+        order_count INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         deleted_at TIMESTAMP -- Soft Delete
@@ -88,6 +90,20 @@ async function migrate() {
       CREATE INDEX IF NOT EXISTS idx_items_category ON menu_items(category_id);
     `);
     console.log('✅ Table "menu_items" ready');
+
+    // Add columns if they don't exist (for existing databases)
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='menu_items' AND column_name='prep_time_minutes') THEN
+          ALTER TABLE menu_items ADD COLUMN prep_time_minutes INT DEFAULT 15 CHECK (prep_time_minutes >= 0 AND prep_time_minutes <= 240);
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='menu_items' AND column_name='order_count') THEN
+          ALTER TABLE menu_items ADD COLUMN order_count INT DEFAULT 0;
+        END IF;
+      END $$;
+    `);
+    console.log('✅ Columns "prep_time_minutes" and "order_count" ensured');
 
     // MENU ITEM PHOTOS (Ảnh món) 
     await pool.query(`

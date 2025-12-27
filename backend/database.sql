@@ -48,6 +48,8 @@ CREATE TABLE IF NOT EXISTS menu_items (
         price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
         status VARCHAR(20) DEFAULT 'available' CHECK (status IN ('available', 'sold_out', 'hidden')),
         is_chef_recommended BOOLEAN DEFAULT false,
+        prep_time_minutes INT DEFAULT 15 CHECK (prep_time_minutes >= 0 AND prep_time_minutes <= 240),
+        order_count INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         deleted_at TIMESTAMP -- Soft Delete
