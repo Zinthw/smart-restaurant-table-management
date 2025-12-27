@@ -25,6 +25,16 @@ export default function GuestMenu() {
   // Kiểm tra quyền Admin để hiển thị nút quay lại nhanh
   const isAdmin = localStorage.getItem("accessToken") || localStorage.getItem("admin_token");
 
+  // Chuẩn hóa URL ảnh: nếu là đường dẫn tương đối (/uploads/...), thêm origin của backend
+  const apiBaseURL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+  const backendOrigin = apiBaseURL.replace(/\/api\/?$/, '');
+  const normalizeUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('/')) return backendOrigin + url;
+    return url;
+  };
+
   useEffect(() => {
     const initData = async () => {
       setLoading(true);
@@ -161,7 +171,8 @@ export default function GuestMenu() {
   const getPrimaryImage = (item) => {
     if (item?.photos && item.photos.length > 0) {
       const primary = item.photos.find(p => p.is_primary);
-      return primary ? primary.url : item.photos[0].url;
+      const raw = primary ? primary.url : item.photos[0].url;
+      return normalizeUrl(raw);
     }
     return '';
   };
@@ -257,7 +268,13 @@ export default function GuestMenu() {
                   </span>
                 )}
                 {getPrimaryImage(item) ? (
-                  <img src={getPrimaryImage(item)} alt={item.name} />
+                  <img
+                    src={getPrimaryImage(item)}
+                    alt={item.name}
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://via.placeholder.com/240x160?text=No+Image';
+                    }}
+                  />
                 ) : (
                   <span>🍽️</span>
                 )}
