@@ -48,7 +48,8 @@ export default function ItemsPage() {
       try {
         // Map frontend sort to backend API sort_by param
         let sortParam = "created_at";
-        if (sortBy === "price_low" || sortBy === "price_high") sortParam = "price";
+        if (sortBy === "price_low" || sortBy === "price_high")
+          sortParam = "price";
         if (sortBy === "popular") sortParam = "popularity";
 
         const [itemsRes, catsRes, modsRes] = await Promise.all([

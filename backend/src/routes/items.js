@@ -106,7 +106,15 @@ router.get("/:id", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const { category_id, name, description, price, status, prep_time_minutes, is_chef_recommended } = req.body;
+    const {
+      category_id,
+      name,
+      description,
+      price,
+      status,
+      prep_time_minutes,
+      is_chef_recommended,
+    } = req.body;
 
     if (!name || name.trim().length === 0)
       return res.status(400).json({ message: "Item name is required" });
@@ -114,8 +122,13 @@ router.post("/", async (req, res, next) => {
       return res.status(400).json({ message: "Category ID is required" });
     if (price === undefined || price <= 0)
       return res.status(400).json({ message: "Price must be greater than 0" });
-    if (prep_time_minutes !== undefined && (prep_time_minutes < 0 || prep_time_minutes > 240))
-      return res.status(400).json({ message: "Prep time must be 0-240 minutes" });
+    if (
+      prep_time_minutes !== undefined &&
+      (prep_time_minutes < 0 || prep_time_minutes > 240)
+    )
+      return res
+        .status(400)
+        .json({ message: "Prep time must be 0-240 minutes" });
 
     const catCheck = await db.query(
       "SELECT 1 FROM menu_categories WHERE id = $1",
@@ -127,7 +140,15 @@ router.post("/", async (req, res, next) => {
     const { rows } = await db.query(
       `INSERT INTO menu_items (category_id, name, description, price, status, prep_time_minutes, is_chef_recommended)
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [category_id, name, description, price, status || "available", prep_time_minutes || 0, is_chef_recommended || false]
+      [
+        category_id,
+        name,
+        description,
+        price,
+        status || "available",
+        prep_time_minutes || 0,
+        is_chef_recommended || false,
+      ]
     );
     res.status(201).json(rows[0]);
   } catch (err) {
@@ -137,14 +158,27 @@ router.post("/", async (req, res, next) => {
 
 router.put("/:id", async (req, res, next) => {
   try {
-    const { category_id, name, description, price, status, prep_time_minutes, is_chef_recommended } = req.body;
+    const {
+      category_id,
+      name,
+      description,
+      price,
+      status,
+      prep_time_minutes,
+      is_chef_recommended,
+    } = req.body;
 
     if (!name || name.trim().length === 0)
       return res.status(400).json({ message: "Item name is required" });
     if (price !== undefined && price <= 0)
       return res.status(400).json({ message: "Price must be greater than 0" });
-    if (prep_time_minutes !== undefined && (prep_time_minutes < 0 || prep_time_minutes > 240))
-      return res.status(400).json({ message: "Prep time must be 0-240 minutes" });
+    if (
+      prep_time_minutes !== undefined &&
+      (prep_time_minutes < 0 || prep_time_minutes > 240)
+    )
+      return res
+        .status(400)
+        .json({ message: "Prep time must be 0-240 minutes" });
     if (category_id) {
       const catCheck = await db.query(
         "SELECT 1 FROM menu_categories WHERE id = $1",
@@ -160,7 +194,16 @@ router.put("/:id", async (req, res, next) => {
            price = COALESCE($4, price), status = COALESCE($5, status), prep_time_minutes = COALESCE($6, prep_time_minutes),
            is_chef_recommended = COALESCE($7, is_chef_recommended), updated_at = NOW()
        WHERE id = $8 AND deleted_at IS NULL RETURNING *`,
-      [category_id, name, description, price, status, prep_time_minutes, is_chef_recommended, req.params.id]
+      [
+        category_id,
+        name,
+        description,
+        price,
+        status,
+        prep_time_minutes,
+        is_chef_recommended,
+        req.params.id,
+      ]
     );
     if (!rows[0]) return res.status(404).json({ message: "Item not found" });
     res.json(rows[0]);
@@ -185,7 +228,7 @@ router.delete("/:id", async (req, res, next) => {
 router.patch("/:id/status", async (req, res, next) => {
   try {
     const { status } = req.body;
-    if (!['available', 'unavailable', 'sold_out'].includes(status)) {
+    if (!["available", "unavailable", "sold_out"].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
     }
     const { rows } = await db.query(

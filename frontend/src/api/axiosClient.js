@@ -8,11 +8,15 @@ const axiosClient = axios.create({
 });
 
 axiosClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("admin_token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  } else {
-    console.warn("⚠️ No token found in localStorage");
+  const url = config.url || "";
+  const isAdminApi = url.startsWith("/admin/") || url.includes("/admin/");
+  if (isAdminApi) {
+    const token = localStorage.getItem("admin_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn("⚠️ No admin_token found for admin API call");
+    }
   }
   return config;
 });
