@@ -543,7 +543,7 @@ export default function GuestMenu() {
         <div
           className="nav-item"
           style={{ position: "relative" }}
-          onClick={() => navigate("/customer/login")}
+          onClick={() => navigate("/guest/login")}
         >
           <span className="nav-icon">&#128722;</span>
           <span className="nav-badge">2</span>
@@ -553,7 +553,7 @@ export default function GuestMenu() {
           <span className="nav-icon">&#128203;</span>
           <span>Đơn hàng</span>
         </div>
-        <div className="nav-item" onClick={() => navigate("/customer/login")}>
+        <div className="nav-item" onClick={() => navigate("/guest/login")}> 
           <span className="nav-icon">&#128100;</span>
           <span>Tôi</span>
         </div>
