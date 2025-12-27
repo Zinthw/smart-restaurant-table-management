@@ -23,25 +23,14 @@ const AdminLogin = () => {
     }
 
     try {
-      // Gọi API login thật
       const response = await authApi.login({ email, password });
 
-      // Lưu token và thông tin user
-      localStorage.setItem("accessToken", response.data.token);
       localStorage.setItem("admin_token", response.data.token);
       localStorage.setItem("role", response.data.user.role);
       localStorage.setItem("userEmail", response.data.user.email);
 
-      // Thông báo thành công
       toast.success("Đăng nhập thành công!");
-
-      // Chuyển hướng tùy theo role
-      if (response.data.user.role === "admin") {
-        navigate("/admin/tables");
-      } else {
-        // Các role khác có thể redirect đến trang khác
-        navigate("/admin/tables");
-      }
+      navigate("/admin/menu/items");
     } catch (err) {
       const errorMessage = err.response?.data?.message || "Đăng nhập thất bại";
       setError(errorMessage);
@@ -52,66 +41,82 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <div className="login-header">
-          <div style={{ fontSize: "40px", marginBottom: "10px" }}>🔥</div>
-          <h1
-            style={{
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: "#2c3e50",
-              marginBottom: "5px",
-            }}
-          >
-            Smart Restaurant
-          </h1>
-          <p style={{ color: "#95a5a6", fontSize: "14px" }}>
-            Quản trị viên & Nhân viên
-          </p>
+    <div className="admin-login-container" style={{ background: "#f5f6fa", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div className="admin-login-box" style={{ background: "#fff", padding: "40px", borderRadius: "16px", boxShadow: "0 10px 25px rgba(0,0,0,0.05)", width: "100%", maxWidth: "400px" }}>
+        
+        {/* Logo & Header từ Mockup */}
+        <div style={{ textAlign: "center", marginBottom: "40px" }}>
+          <div style={{ fontSize: "50px", marginBottom: "15px" }}>🍽️</div>
+          <div style={{ fontSize: "24px", fontWeight: "700", color: "#2c3e50" }}>Smart Restaurant</div>
+          <div style={{ color: "#7f8c8d", fontSize: "14px" }}>Admin Dashboard</div>
         </div>
 
+        {/* Login Form */}
         <form onSubmit={handleLogin}>
-          <div className="form-group" style={{ textAlign: "left" }}>
-            <label className="form-label">Email</label>
+          <div className="form-group" style={{ marginBottom: "20px" }}>
+            <label className="form-label" style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#2c3e50" }}>Email</label>
             <input
               type="email"
               className="form-input"
+              style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #ddd", outline: "none" }}
               placeholder="admin@restaurant.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
-          <div className="form-group" style={{ textAlign: "left" }}>
-            <label className="form-label">Mật khẩu</label>
+          <div className="form-group" style={{ marginBottom: "20px" }}>
+            <label className="form-label" style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#2c3e50" }}>Mật khẩu</label>
             <input
               type="password"
               className="form-input"
-              placeholder="••••••"
+              style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #ddd", outline: "none" }}
+              placeholder="Nhập mật khẩu của bạn"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
 
+          {/* Extra Options từ Mockup */}
+          <div style={{ display: "flex", justifyHeight: "space-between", justifyContent: "space-between", alignItems: "center", marginBottom: "25px" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: 14, color: "#7f8c8d", cursor: "pointer" }}>
+              <input type="checkbox" style={{ cursor: "pointer" }} />
+              Ghi nhớ đăng nhập
+            </label>
+            <a href="#" style={{ color: "#e74c3c", textDecoration: "none", fontSize: "14px" }}>Quên mật khẩu?</a>
+          </div>
+
           {error && (
-            <div
-              className="form-hint error"
-              style={{ textAlign: "center", marginBottom: "15px" }}
-            >
+            <div style={{ color: "#e74c3c", fontSize: "13px", textAlign: "center", marginBottom: "15px" }}>
               {error}
             </div>
           )}
 
           <button
             type="submit"
-            className="btn-primary"
-            style={{ width: "100%", justifyContent: "center" }}
             disabled={loading}
+            style={{
+              width: "100%",
+              padding: "15px",
+              background: "#e74c3c",
+              color: "white",
+              border: "none",
+              borderRadius: "12px",
+              fontSize: "16px",
+              fontWeight: "600",
+              cursor: loading ? "not-allowed" : "pointer",
+              transition: "background 0.3s",
+              opacity: loading ? 0.7 : 1
+            }}
           >
-            {loading ? "Đang xử lý..." : "Đăng nhập"}
+            {loading ? "Đang xử lý..." : "Đăng nhập vào Dashboard"}
           </button>
         </form>
+
+        {/* Footer từ Mockup */}
+        <div style={{ textAlign: "center", marginTop: "30px", color: "#7f8c8d", fontSize: "13px" }}>
+          &copy; 2025 Smart Restaurant. All rights reserved.
+        </div>
       </div>
     </div>
   );

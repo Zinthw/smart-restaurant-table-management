@@ -76,6 +76,16 @@ npm run dev
 
 Frontend sẽ chạy tại: http://localhost:5173
 
+## Cấu hình môi trường (Production)
+
+Khi deploy:
+
+- **Frontend (Vercel):** cấu hình biến môi trường `VITE_API_URL` trỏ về backend Render, ví dụ: `https://your-backend.onrender.com/api`.
+- **Backend (Render):** đang bật `cors()` cho phép mọi origin, dùng JWT qua header `Authorization` nên không cần cookie.
+- **Token lưu trữ:** Frontend lưu token tại `localStorage` key `admin_token`.
+
+Sau khi cấu hình xong, các API trên FE sẽ gọi đúng vào BE sản xuất.
+
 ## Bước 5: Đăng nhập
 
 Mở trình duyệt và truy cập: http://localhost:5173

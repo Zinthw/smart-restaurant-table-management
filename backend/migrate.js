@@ -17,10 +17,14 @@ async function migrate() {
     
 
     // Xóa bảng cũ để tạo bảng mới.
-    console.log('⚠️ Đang reset bảng users...');
-    await pool.query(`DROP TABLE IF EXISTS users CASCADE;`);
+    // await pool.query(`DROP TABLE IF EXISTS menu_item_photos CASCADE;`);
+    // await pool.query(`DROP TABLE IF EXISTS menu_item_modifier_groups CASCADE;`);
+    // await pool.query(`DROP TABLE IF EXISTS modifier_options CASCADE;`);
+    // await pool.query(`DROP TABLE IF EXISTS modifier_groups CASCADE;`);
+    // await pool.query(`DROP TABLE IF EXISTS menu_items CASCADE;`);
+    // await pool.query(`DROP TABLE IF EXISTS menu_categories CASCADE;`);
 
-    // 2. Tạo bảng TABLES (Giữ nguyên)
+    // 2. Tạo bảng TABLES 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS tables (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -35,9 +39,9 @@ async function migrate() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log('✅ Bảng "tables" đã sẵn sàng.');
+    console.log('✅ Table "tables" ready');
 
-    // 3. Tạo bảng USERS (Cấu trúc mới: dùng email)
+    // Tạo bảng USERS 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -48,19 +52,104 @@ async function migrate() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log('✅ Bảng "users" (mới) đã sẵn sàng.');
+    console.log('✅ Table "users" ready');
 
-    // 4. Tạo User Admin mẫu (Seeding)
-    const adminEmail = 'admin@restaurant.com';
-    // Vì vừa Drop bảng nên chắc chắn chưa có user, ta insert luôn
-    const hash = await bcrypt.hash('123456', 10);
-    
+    // MENU CATEGORIES (Danh mục món)
     await pool.query(`
-      INSERT INTO users (email, password_hash, role, status)
-      VALUES ($1, $2, 'admin', 'active')
-    `, [adminEmail, hash]);
+      CREATE TABLE IF NOT EXISTS menu_categories (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        image_url TEXT,
+        status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+        sort_order INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        deleted_at TIMESTAMP -- Soft Delete
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_category_name_not_deleted ON menu_categories (name) WHERE deleted_at IS NULL;
+    `);
+    console.log('✅ Table "menu_categories" ready');
+
+    // MENU ITEMS (Món ăn)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS menu_items (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        category_id UUID REFERENCES menu_categories(id),
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
+        status VARCHAR(20) DEFAULT 'available' CHECK (status IN ('available', 'sold_out', 'hidden')),
+        is_chef_recommended BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        deleted_at TIMESTAMP -- Soft Delete
+      );
+      CREATE INDEX IF NOT EXISTS idx_items_category ON menu_items(category_id);
+    `);
+    console.log('✅ Table "menu_items" ready');
+
+    // MENU ITEM PHOTOS (Ảnh món) 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS menu_item_photos (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        menu_item_id UUID REFERENCES menu_items(id) ON DELETE CASCADE,
+        photo_url TEXT NOT NULL,
+        is_primary BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('✅ Table "menu_item_photos" ready');
+
+    // MODIFIER GROUPS (Nhóm Topping/Size) 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS modifier_groups (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(100) NOT NULL,
+        selection_type VARCHAR(20) DEFAULT 'single' CHECK (selection_type IN ('single', 'multiple')), 
+        is_required BOOLEAN DEFAULT false,
+        min_selection INT DEFAULT 0,
+        max_selection INT DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('✅ Table "modifier_groups" ready');
+
+    // MODIFIER OPTIONS (Các lựa chọn con) 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS modifier_options (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        group_id UUID REFERENCES modifier_groups(id) ON DELETE CASCADE,
+        name VARCHAR(100) NOT NULL,
+        price_adjustment DECIMAL(10, 2) DEFAULT 0,
+        status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('✅ Table "modifier_options" ready');
+
+    // LIÊN KẾT MÓN - NHÓM MODIFIER (Many-to-Many)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS menu_item_modifier_groups (
+        menu_item_id UUID REFERENCES menu_items(id) ON DELETE CASCADE,
+        modifier_group_id UUID REFERENCES modifier_groups(id) ON DELETE CASCADE,
+        sort_order INT DEFAULT 0,
+        PRIMARY KEY (menu_item_id, modifier_group_id)
+      );
+    `);
+    console.log('✅ Table "menu_item_modifier_groups" ready');
+
+    // Tạo User Admin mẫu (Seeding nếu chạy lần đầu)
+    // const adminEmail = 'admin@restaurant.com';
+    // const hash = await bcrypt.hash('123456', 10);
     
-    console.log(`🎉 Tạo Admin mẫu thành công: ${adminEmail} / 123456`);
+    // await pool.query(`
+    //   INSERT INTO users (email, password_hash, role, status)
+    //   VALUES ($1, $2, 'admin', 'active')
+    // `, [adminEmail, hash]);
+    
+    // console.log(`🎉 Tạo Admin mẫu thành công: ${adminEmail} / 123456`);
 
     console.log('✅ MIGRATION HOÀN TẤT!');
     process.exit(0);

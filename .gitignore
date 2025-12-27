@@ -27,3 +27,6 @@ Thumbs.db
 # Test coverage
 coverage/
 .nyc_output/
+
+# Markdown docs (không push)
+*.md

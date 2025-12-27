@@ -1,37 +1,68 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
 
-const tablesRouter = require('./routes/tables');
-const qrRouter = require('./routes/qr');
-const publicRouter = require('./routes/public');
-const errorHandler = require('./middleware/errorHandler');
+const tablesRouter = require("./routes/tables");
+const qrRouter = require("./routes/qr");
+const publicRouter = require("./routes/public");
+const errorHandler = require("./middleware/errorHandler");
 
-const authRouter = require('./routes/auth');
-const { requireAuth, requireRole } = require('./middleware/authMiddleware');
+const authRouter = require("./routes/auth");
+const { requireAuth, requireRole } = require("./middleware/authMiddleware");
+
+const categoriesRouter = require("./routes/categories");
+const itemsRouter = require("./routes/items");
+const path = require("path");
+const photosRouter = require("./routes/photos");
+const modifiersRouter = require("./routes/modifiers");
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
 });
 
-// API Auth (Login/Register) 
-app.use('/api/auth', authRouter);
+// Giúp truy cập ảnh qua link
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+// API Auth (Login/Register)
+app.use("/api/auth", authRouter);
 
 // API Admin (Tables, QR)
-// Yêu cầu: Phải đăng nhập VÀ Phải là 'admin'
-app.use('/api/admin/tables', requireAuth, requireRole('admin'), tablesRouter);
-app.use('/api/admin/tables', requireAuth, requireRole('admin'), qrRouter);
+app.use("/api/admin/tables", requireAuth, requireRole("admin"), tablesRouter);
+app.use("/api/admin/tables", requireAuth, requireRole("admin"), qrRouter);
 
-// API cho Waiter (sau này làm thêm)
-// app.use('/api/waiter/orders', requireAuth, requireRole(['waiter', 'admin']), waiterRouter);
+// MENU MANAGEMENT ROUTES
+app.use(
+  "/api/admin/menu/categories",
+  requireAuth,
+  requireRole("admin"),
+  categoriesRouter
+);
 
-// Public Routes (Dành cho khách quét QR). Frontend sẽ gọi /api/menu/verify
-app.use('/api/menu', publicRouter);
+// Router Photos - Mount TRƯỚC itemsRouter để cụ thể routes match trước
+app.use(
+  "/api/admin/menu/items",
+  requireAuth,
+  requireRole("admin"),
+  photosRouter
+);
+
+// Router Items - Mount sau photos
+app.use(
+  "/api/admin/menu/items",
+  requireAuth,
+  requireRole("admin"),
+  itemsRouter
+);
+
+// Router Modifiers
+app.use("/api/admin/menu", requireAuth, requireRole("admin"), modifiersRouter);
+
+// Public Routes (Dành cho khách quét QR)
+app.use("/api/menu", publicRouter);
 
 app.use(errorHandler);
 
