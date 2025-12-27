@@ -42,4 +42,8 @@ export const menuApi = {
     axiosClient.patch(`/admin/menu/categories/${id}/status`, { status }),
   setPhotoAsPrimary: (itemId, photoId) =>
     axiosClient.patch(`/admin/menu/items/${itemId}/photos/${photoId}/primary`),
+  addItemPhotosFromUrl: (itemId, urls) =>
+    axiosClient.post(`/admin/menu/items/${itemId}/photos/from-url`, { urls }),
+  deleteItemPhoto: (itemId, photoId) =>
+    axiosClient.delete(`/admin/menu/items/${itemId}/photos/${photoId}`),
 };

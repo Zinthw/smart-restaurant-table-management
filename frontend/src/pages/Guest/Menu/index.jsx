@@ -553,7 +553,7 @@ export default function GuestMenu() {
           <span className="nav-icon">&#128203;</span>
           <span>Đơn hàng</span>
         </div>
-        <div className="nav-item" onClick={() => navigate("/guest/login")}> 
+        <div className="nav-item" onClick={() => navigate("/guest/login")}>
           <span className="nav-icon">&#128100;</span>
           <span>Tôi</span>
         </div>

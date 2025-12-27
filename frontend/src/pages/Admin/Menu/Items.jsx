@@ -199,38 +199,99 @@ export default function ItemsPage() {
     toast("Đã sao chép thông tin!", { icon: "📋" });
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa món này không?")) {
-      setItems(items.filter((i) => i.id !== id));
-      toast.success("Đã xóa món ăn!");
+      try {
+        await menuApi.deleteItem(id);
+        setItems(items.filter((i) => i.id !== id));
+        toast.success("Đã xóa món ăn!");
+      } catch (error) {
+        console.error("Delete error:", error);
+        toast.error("Lỗi xóa món");
+      }
     }
   };
 
   // --- LOGIC XỬ LÝ ẢNH ---
-  const handleAddPhoto = () => {
+  const handleAddPhoto = async () => {
     if (!tempPhotoUrl.trim()) return;
-    const newPhoto = {
-      id: Date.now(),
-      url: tempPhotoUrl,
-      is_primary: formData.photos.length === 0, // Nếu là ảnh đầu tiên thì auto primary
-    };
-    setFormData({ ...formData, photos: [...formData.photos, newPhoto] });
-    setTempPhotoUrl("");
+    // Nếu đang sửa món có id, lưu ảnh vào DB qua API from-url
+    if (isEditMode && formData.id) {
+      try {
+        const res = await menuApi.addItemPhotosFromUrl(formData.id, [
+          tempPhotoUrl,
+        ]);
+        const savedRaw = res.data?.data || [];
+        // Chuẩn hóa dữ liệu ảnh từ BE về dạng {id, url, is_primary}
+        const saved = savedRaw.map((p) => ({
+          id: p.id,
+          url: p.photo_url || p.url,
+          is_primary: !!p.is_primary,
+        }));
+        // Ghép ảnh mới vào formData (đúng field 'url')
+        setFormData({ ...formData, photos: [...formData.photos, ...saved] });
+        toast.success("Đã lưu ảnh vào món!");
+      } catch (err) {
+        console.error(err);
+        toast.error("Lỗi lưu ảnh");
+      } finally {
+        setTempPhotoUrl("");
+      }
+    } else {
+      // Trường hợp tạo món mới (chưa có id), chỉ thêm local tạm
+      const newPhoto = {
+        id: Date.now(),
+        url: tempPhotoUrl,
+        is_primary: formData.photos.length === 0,
+      };
+      setFormData({ ...formData, photos: [...formData.photos, newPhoto] });
+      setTempPhotoUrl("");
+    }
   };
 
-  const handleSetPrimaryPhoto = (photoId) => {
-    const updatedPhotos = formData.photos.map((p) => ({
-      ...p,
-      is_primary: p.id === photoId,
-    }));
-    setFormData({ ...formData, photos: updatedPhotos });
+  const handleSetPrimaryPhoto = async (photoId) => {
+    // Nếu có id, gọi API set primary
+    if (isEditMode && formData.id) {
+      try {
+        await menuApi.setPhotoAsPrimary(formData.id, photoId);
+        const updatedPhotos = formData.photos.map((p) => ({
+          ...p,
+          is_primary: p.id === photoId,
+        }));
+        setFormData({ ...formData, photos: updatedPhotos });
+        toast.success("Đã đặt ảnh chính");
+      } catch (err) {
+        console.error(err);
+        toast.error("Lỗi đặt ảnh chính");
+      }
+    } else {
+      const updatedPhotos = formData.photos.map((p) => ({
+        ...p,
+        is_primary: p.id === photoId,
+      }));
+      setFormData({ ...formData, photos: updatedPhotos });
+    }
   };
 
-  const handleRemovePhoto = (photoId) => {
-    setFormData({
-      ...formData,
-      photos: formData.photos.filter((p) => p.id !== photoId),
-    });
+  const handleRemovePhoto = async (photoId) => {
+    if (isEditMode && formData.id) {
+      try {
+        await menuApi.deleteItemPhoto(formData.id, photoId);
+        setFormData({
+          ...formData,
+          photos: formData.photos.filter((p) => p.id !== photoId),
+        });
+        toast.success("Đã xóa ảnh");
+      } catch (err) {
+        console.error(err);
+        toast.error("Lỗi xóa ảnh");
+      }
+    } else {
+      setFormData({
+        ...formData,
+        photos: formData.photos.filter((p) => p.id !== photoId),
+      });
+    }
   };
 
   // --- LOGIC XỬ LÝ MODIFIER ---
@@ -252,22 +313,77 @@ export default function ItemsPage() {
   };
 
   // --- SAVE ---
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (formData.price < 0) {
       toast.error("Giá tiền không được phép âm!");
       return;
     }
 
-    if (isEditMode) {
-      setItems(items.map((i) => (i.id === formData.id ? formData : i)));
-      toast.success("Cập nhật món thành công!");
-    } else {
-      const newItem = { ...formData, id: Date.now(), order_count: 0 };
-      setItems([newItem, ...items]);
-      toast.success("Thêm món mới thành công!");
+    try {
+      if (isEditMode) {
+        // Update existing item
+        const updateData = {
+          name: formData.name,
+          category_id: formData.category_id,
+          price: formData.price,
+          description: formData.description,
+          status: formData.status,
+          prep_time_minutes: formData.prep_time_minutes,
+          is_chef_recommended: formData.is_recommended,
+        };
+        await menuApi.updateItem(formData.id, updateData);
+
+        // Attach modifier groups nếu có
+        if (formData.modifier_group_ids?.length > 0) {
+          await menuApi.attachModifierGroupsToItem(
+            formData.id,
+            formData.modifier_group_ids
+          );
+        }
+
+        // Refresh item list
+        const res = await menuApi.getItems({ page: 1, limit: 500 });
+        setItems(res.data?.data || res.data || []);
+        toast.success("Cập nhật món thành công!");
+      } else {
+        // Create new item
+        const createData = {
+          name: formData.name,
+          category_id: formData.category_id,
+          price: formData.price,
+          description: formData.description,
+          status: formData.status,
+          prep_time_minutes: formData.prep_time_minutes,
+          is_chef_recommended: formData.is_recommended,
+        };
+        const newItemRes = await menuApi.createItem(createData);
+        const newItemId = newItemRes.data?.id || newItemRes.data?.data?.id;
+
+        // Persist photos nếu đã thêm local
+        if (formData.photos.length > 0 && newItemId) {
+          const photoUrls = formData.photos.map((p) => p.url);
+          await menuApi.addItemPhotosFromUrl(newItemId, photoUrls);
+        }
+
+        // Attach modifier groups nếu có
+        if (formData.modifier_group_ids?.length > 0 && newItemId) {
+          await menuApi.attachModifierGroupsToItem(
+            newItemId,
+            formData.modifier_group_ids
+          );
+        }
+
+        // Refresh item list
+        const res = await menuApi.getItems({ page: 1, limit: 500 });
+        setItems(res.data?.data || res.data || []);
+        toast.success("Thêm món mới thành công!");
+      }
+      setShowModal(false);
+    } catch (error) {
+      console.error("Save error:", error);
+      toast.error("Lỗi lưu món: " + (error.response?.data?.message || "Vui lòng thử lại"));
     }
-    setShowModal(false);
   };
 
   // Helper
